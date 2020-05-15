@@ -15,7 +15,7 @@ class ServerThread(Thread):
         self.cond = cond
         self.server = grpc.server(ThreadPoolExecutor(max_workers=max_workers))
         blockchain_pb2_grpc.add_BlockchainServiceServicer_to_server(BlockchainServicer(), self.server)
-        self.server.add_insecure_port('localhost:' + str(port))
+        self.server.add_insecure_port('0.0.0.0:' + str(port))
 
     def run(self):
         self.server.start()

@@ -2,6 +2,8 @@ import argparse
 import threading
 from time import sleep
 import grpc
+import requests
+
 import blockchain_pb2_grpc
 from blockchain_pb2 import PingMsg
 from server_thread import ServerThread
@@ -34,7 +36,12 @@ def get_peers_list(path, self_port):
         ip, start_port, count = peer_dict['ip'], peer_dict['start_port'], peer_dict['count']
         peers_list.extend(['%s:%d' % (ip, port) for port in range(start_port, start_port + count)])
 
-    peers_list.remove('localhost:'+str(self_port))
+    self_ip = requests.get('https://api.ipify.org').text
+    # self_ip = '197.135.207.32'
+    print(self_ip)
+    self_address = self_ip + ':' + str(self_port)
+
+    peers_list.remove(self_address)
     return peers_list
 
 
