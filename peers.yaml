@@ -14,27 +14,40 @@ peers:
         type: client
         key-pair-id: 1
 
-      - port: 8183
+#      - port: 8183
+#        type: client
+#        key-pair-id: 2
+#
+#      - port: 8184
+#        type: miner
+
+      - port: 8200
+        type: miner
+        bft-leader: true
+
+      - port: 8201
         type: client
         key-pair-id: 2
 
-      - port: 8184
+      - port: 8202
+        type: client
+        key-pair-id: 3
+
+  - hostname: 'merit'
+    ip: 41.237.83.106
+    peers:
+      - port: 8180
         type: miner
-#  - hostname: 'merit'
-#    ip: 41.237.83.106
-#    peers:
-#      - port: 8180
-#        type: miner
-#        bft-leader: true
-#
-#      - port: 8181
-#        type: client
-#        key-pair-id: 0
-#
-#      - port: 8182
-#        type: client
-#        key-pair-id: 1
-#
+        bft-leader: true
+
+      - port: 8181
+        type: client
+        key-pair-id: 4
+
+      - port: 8182
+        type: client
+        key-pair-id: 5
+
 #      - port: 8183
 #        type: client
 #        key-pair-id: 2
