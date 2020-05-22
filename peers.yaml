@@ -23,7 +23,6 @@ peers:
 
       - port: 8200
         type: miner
-        bft-leader: true
 
       - port: 8201
         type: client
@@ -38,7 +37,6 @@ peers:
     peers:
       - port: 8180
         type: miner
-        bft-leader: true
 
       - port: 8181
         type: client
