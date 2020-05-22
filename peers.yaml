@@ -34,7 +34,7 @@ peers:
         key-pair-id: 3
 
   - hostname: 'merit'
-    ip: 41.237.83.106
+    ip: 41.40.75.109
     peers:
       - port: 8180
         type: miner
