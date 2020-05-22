@@ -16,11 +16,11 @@ from model._bft.bft_state import PrePreparedState
 from model._transaction_generator import TransactionGenerator
 from server.server_dispatcher import ServerDispatcher
 from server.server_thread import ServerThread
+from util.logger import Logger
 from util.message.advertise_self_message import AdvertiseSelfMessage
 from util.message.bft import PrePrepareMessage
 from util.message.ping_message import PingMessage
 from util.peer_data import PeerData
-
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Simple blockchain client-server')
@@ -83,6 +83,10 @@ if __name__ == '__main__':
 
     peers_address_database = list(map(lambda x: x.address, peers_data))
     print(peers_address_database)
+
+    # Logger.type = mode
+    Logger.port = args.port
+    Logger.dir = 'logs/'
 
     BUF_SIZE = 100
     server_queue = Queue(BUF_SIZE)

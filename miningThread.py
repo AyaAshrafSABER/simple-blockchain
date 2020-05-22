@@ -1,4 +1,5 @@
 import threading
+import time
 from time import sleep
 from typing import TYPE_CHECKING
 
@@ -35,6 +36,8 @@ class MiningThread(threading.Thread):
         return self.__stop_event.is_set()
 
     def run(self):
+        start_time = time.time()
+
         self.__transactions = self.__model.unconfirmed_tx_pool[0:CHAIN_SIZE]
         self.__prev_hash = self.__model.blockchain.get_head_of_chain().block.block_hash
         pow_found = False
@@ -52,6 +55,9 @@ class MiningThread(threading.Thread):
             self.__model.unconfirmed_tx_pool[0:CHAIN_SIZE] = []
             self.__model.blockchain.add_block(block)
             self.__model.broadcast_new_block(block)
+
+            self.__model.block_logger.log(time.time() - start_time)
+
             print(str(block))
             # TODO: broadcast new block
             # self.__model.verify_block(block)

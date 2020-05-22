@@ -1,4 +1,5 @@
 import random
+import time
 from typing import List
 
 from cryptography.hazmat.backends import default_backend
@@ -14,6 +15,7 @@ from model._server_handler import ServerHandler
 from transaction.transaction import Transaction
 from transaction.utxo import Utxo
 from util.helpers import BASE_VALUE, DIFFICULTY_LEVEL, verify_signature, hash_transaction, sign, CHAIN_SIZE
+from util.logger import Logger
 from util.message.bft import PrePrepareMessage, PrepareMessage, CommitMessage
 from util.peer_data import PeerData
 
@@ -36,7 +38,8 @@ class Model:
         self.active_peers = []
         self.server_handler = ServerHandler(self)
         self.broadcast_handler = BroadcastHandler(self)
-        self.bft_context = BFTContext(self.active_peers, self, bft_leader)
+        if mining_mode == 'bft':
+            self.bft_context = BFTContext(self.active_peers, self, bft_leader)
         if mode == 'client':
             self.sk = sk
             self.pk = serialization.load_pem_public_key(peer_data.pk, backend=default_backend())
@@ -51,13 +54,27 @@ class Model:
         if mode == 'client':
             print(self.__wallet[0].to_dict())
 
+        self.block_start_time = time.time()
+        self.msg_count = 0
+        if mode == 'miner':
+            if mining_mode == 'pow':
+                self.block_logger = Logger('pow-time')
+                self.block_msg_logger = Logger('block-msg')
+            elif mining_mode == 'bft' and bft_leader:
+                self.block_logger = Logger('bft-time')
+                self.block_msg_logger = Logger('block-msg')
+
     def handle_broadcast_responses(self, message, responses):
+        self.msg_count += len(responses)
         return self.broadcast_handler.handle(message, responses)
 
     def handle_server_message(self, message):
+        self.msg_count += 1
         return self.server_handler.handle(message)
 
     def broadcast_pre_prepare(self, message: PrePrepareMessage):
+        self.block_start_time = time.time()
+
         self.bft_context.transition_to(PrePreparedState)
         self.bft_context.pre_prepare_message = message
         pre_prepare_event = BroadcastEvent(message)
@@ -85,7 +102,7 @@ class Model:
         my_trans = []
         for peer in self.peers_database:
             if peer.pk is not None:
-                for count in range(CHAIN_SIZE//2):
+                for count in range(CHAIN_SIZE // 2):
                     if peer.pk == self.peer_data.pk:
                         trans = Transaction(outputs=[(peer.pk, BASE_VALUE)], timestamp=count)
                         my_trans.append(trans)
@@ -131,7 +148,6 @@ class Model:
                     self.__wallet.append(op)
                     print("--- got a utxo in my wallet 😎😎 ---")
 
-
     # Miner and Client
     def verify_and_add_block(self, block):
         if self.mode == 'miner' and self.mining_mode == 'pow':
@@ -161,8 +177,13 @@ class Model:
             if len(self.unconfirmed_tx_pool) >= CHAIN_SIZE and (self.__mining_thread is None or not self.is_mining()):
                 self.__mining_thread = MiningThread(self)
                 self.__mining_thread.start()
+
+                self.block_msg_logger.log(self.msg_count)
+                self.msg_count = 0
+
         elif self.mining_mode == 'bft':
-            if len(self.unconfirmed_tx_pool) >= CHAIN_SIZE and self.bft_context.leader and self.bft_context.state.__class__ == IdleState:
+            if len(
+                    self.unconfirmed_tx_pool) >= CHAIN_SIZE and self.bft_context.leader and self.bft_context.state.__class__ == IdleState:
                 transactions = self.unconfirmed_tx_pool[0:CHAIN_SIZE]
                 self.unconfirmed_tx_pool[0:CHAIN_SIZE] = []
 
@@ -171,6 +192,9 @@ class Model:
                 self.bft_context.pre_prepare_message = block
                 self.bft_context.transition_to(PrePreparedState)
                 self.broadcast_pre_prepare(PrePrepareMessage(block))
+
+                self.block_msg_logger.log(self.msg_count)
+                self.msg_count = 0
 
         #     self.__mining_thread.set_data(self.unconfirmed_tx_pool[0: CHAIN_SIZE],
         #                                   self.blockchain.get_head_of_chain().block.block_hash, DIFFICULTY_LEVEL)

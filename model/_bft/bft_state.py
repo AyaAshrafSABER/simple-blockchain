@@ -1,3 +1,4 @@
+import time
 from abc import ABC, abstractmethod
 from collections import Counter
 
@@ -121,6 +122,10 @@ class PreparedState(BFTState):
         voted_block = self._majority_vote()
         print("=========================> Majority vote:")
         print(str(voted_block))
+
+        if self.context.leader:
+            self.context.model.block_logger.log(time.time() - self.context.model.block_start_time)
+
         self.context.model.blockchain.add_block(voted_block)
         if self.context.model.mode == 'client':
             self.context.model.maybe_store_output(voted_block)
